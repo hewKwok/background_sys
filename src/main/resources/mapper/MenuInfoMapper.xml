@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qf.mapper.MenuInfoMapper">
+    <resultMap id="menuInfoMap" type="com.qf.dto.MenuInfoDto">
+        <id column="menueid" property="id"></id>
+        <result column="menuename" property="name"></result>
+        <result column="menuepath" property="url"></result>
+        <result column="menueicon" property="icon"></result>
+        <result column="parentid" property="pid"></result>
+        <result column="checked" property="checked"></result>
+        <collection property="children" ofType="com.qf.dto.MenuInfoDto">
+            <id column="cid" property="id"></id>
+            <result column="cname" property="name"></result>
+            <result column="cpath" property="url"></result>
+            <result column="cicon" property="icon"></result>
+            <result column="cpid" property="pid"></result>
+            <result column="checked" property="checked"></result>
+        </collection>
+    </resultMap>
+
+    <select id="getAllMenu" resultMap="menuInfoMap" parameterType="int">
+   select tb1.*,MAX(rm.status) checked from (SELECT m1.*,m2.menueid cid,m2.menuename cname,
+        m2.menuepath cpath,m2.menueicon cicon,m2.parentid cpid
+        from menueinfo m1,menueinfo m2  where m1.menueid = m2.parentid) tb1
+        left join role_menue rm on tb1.cid = rm.menueid where rm.roleid = #{role.id} GROUP BY tb1.cid
+    </select>
+
+    <update id="deleteByRoleId" parameterType="com.qf.vo.AssignPermessionVo">
+        update role_menue set status = 0 where roleid = #{roleid}
+    </update>
+
+    <insert id="assignPermission" parameterType="com.qf.vo.AssignPermessionVo">
+        insert into role_menue(rmid,roleid,menueid,status)
+        values
+        <foreach collection="menuIds" item="id" separator=",">
+            (default,#{roleid},#{id},1)
+        </foreach>
+    </insert>
+
+
+    <select id="getCount" resultType="int" parameterType="com.qf.vo.MenuInfoVo">
+        select count(*) from menueinfo
+        <where>
+            status = 1
+            <if test="menuename!=null and menuename!=''">
+                and menuename = #{menuename}
+            </if>
+        </where>
+    </select>
+
+    <update id="deleteMenuById" parameterType="int">
+        update menueinfo set status = 0 where menueid = #{menueid}
+    </update>
+
+    <select id="getMenuByMenu" parameterType="com.qf.pojo.MenuInfo" resultType="com.qf.pojo.MenuInfo">
+        select * from
+        (select m1.*,IFNULL(m2.menuename,'无') parentName from menueinfo m1
+        LEFT JOIN menueinfo m2 on m1.parentid = m2.menueid and m1.status = 1 and m2.status = 1) m3
+        <where>
+             m3.status = 1
+            <if test="menueid !=null and menueid !='' ">
+                and menueid=#{menueid}
+            </if>
+            <if test="parentName!= null and parentName!='' ">
+                and m3.parentName=#{parentName}
+            </if>
+
+        </where>
+
+    </select>
+
+    <update id="updateMenuInfoById" parameterType="com.qf.pojo.MenuInfo" >
+        update menueinfo
+        <set>
+            <if test="menuename!=null and menuename!=''">
+                menuename = #{menuename},
+            </if>
+            <if test="parentid!=null and parentid!=''">
+                parentid = #{parentid}
+            </if>
+        </set>
+        where menueid = #{menueid}
+    </update>
+
+    <select id="getMenuByPage" parameterType="com.qf.vo.MenuInfoVo" resultType="com.qf.pojo.MenuInfo">
+        select * from
+        (select m1.*,IFNULL(m2.menuename,'无') parentName from menueinfo m1
+        LEFT JOIN menueinfo m2 on m1.parentid = m2.menueid and m1.status = 1 and m2.status = 1) m3
+        <where>
+            <if test="menuename != null and menuename != '' ">
+                and menuename=#{menuename}
+            </if>
+            and m3.status = 1 limit  #{splitPageUtils.start},#{splitPageUtils.pageSize}
+        </where>
+    </select>
+
+</mapper>

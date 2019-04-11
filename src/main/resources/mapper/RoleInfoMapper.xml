@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qf.mapper.RoleInfoMapper">
+
+    <select id="getRoleById" parameterType="int" resultType="com.qf.dto.RoleInfoDto">
+        select r.*,u.userid from userinfo u right join user_role ur on u.userid=ur.userid
+        right join roleinfo r on r.roleid=ur.roleid
+        and ur.status=1
+        and u.status=1 and u.userid = #{userid}
+    </select>
+
+    <update id="changeOldRole" parameterType="com.qf.vo.RoleChangeVo">
+        update user_role set status = 0 where userid = #{userid}
+    </update>
+
+    <insert id="changeNewRole" parameterType="com.qf.vo.RoleChangeVo">
+        insert into user_role(ur_id,userid,roleid,status)
+        values
+        <foreach collection="newRole" item="id" separator=",">
+            (default,#{userid},#{id},1)
+        </foreach>
+    </insert>
+
+
+    <select id="getRoleByPage" parameterType="com.qf.vo.RoleInfoVo" resultType="com.qf.pojo.RoleInfo">
+      select * from roleinfo
+      <where>
+          status = 1
+          <if test="roleName!=null and roleName!=''">
+                and rolename = #{roleName}
+          </if>
+      </where>
+         limit  #{splitPageUtils.start},#{splitPageUtils.pageSize}
+    </select>
+
+    <select id="getCount" resultType="int" parameterType="com.qf.vo.RoleInfoVo">
+        select count(*) from roleinfo
+        <where>
+            status = 1
+            <if test="roleName!=null and roleName!=''">
+                and rolename = #{roleName}
+            </if>
+        </where>
+    </select>
+
+    <insert id="addRoleInfo" parameterType="com.qf.pojo.RoleInfo">
+        insert into roleinfo(roleid,rolename,status) values (default,#{rolename},1)
+    </insert>
+
+    <update id="deleteRoleById" parameterType="com.qf.pojo.RoleInfo">
+        update roleinfo set status = 0 where roleid=#{roleid}
+    </update>
+
+    <select id="getRoleByRoleId" parameterType="int" resultType="com.qf.dto.RoleInfoDto">
+        select * from roleinfo where roleid=#{roleid} and status=1
+    </select>
+
+    <update id="updateRoleInfoById" parameterType="com.qf.pojo.RoleInfo" >
+        update roleinfo
+        <set>
+            <if test="rolename!=null and rolename!=''">
+                rolename = #{rolename}
+            </if>
+        </set>
+        where roleid = #{roleid}
+    </update>
+
+</mapper>
